@@ -89,13 +89,13 @@ function createMergedInfo(curRange)
   var iBaseCol = curRange.getColumn();
 //  console.log("curRange[%d][%d]", curRange.getRow(), curRange.getColumn());
   for (var i = 0; i < mergedRanges.length; i++) {
-    console.log("RangeNot[%s] Row[%d] NumRow[%d] Col[%d] NumCol[%d]"
-                , mergedRanges[i].getA1Notation()
-                , mergedRanges[i].getRow()
-                , mergedRanges[i].getNumRows()
-                , mergedRanges[i].getColumn()
-                , mergedRanges[i].getNumColumns()
-               );
+//    console.log("RangeNot[%s] Row[%d] NumRow[%d] Col[%d] NumCol[%d]"
+//                , mergedRanges[i].getA1Notation()
+//                , mergedRanges[i].getRow()
+//                , mergedRanges[i].getNumRows()
+//                , mergedRanges[i].getColumn()
+//                , mergedRanges[i].getNumColumns()
+//               );
     var iCurRow = mergedRanges[i].getRow();
     var iCurCol = mergedRanges[i].getColumn();
     var iNumRows = mergedRanges[i].getNumRows();
@@ -111,8 +111,8 @@ function createMergedInfo(curRange)
       }
     }
   }
-  console.log("Log : ar_MergedInfo");
-  console.log(ar_MergedInfo);
+//  console.log("Log : ar_MergedInfo");
+//  console.log(ar_MergedInfo);
   return ar_MergedInfo;
 }
 
@@ -183,7 +183,7 @@ function TextileProcByArr(bSmall)
       }
     }
     szOutString += '|\r\n';
-    console.log("Textile Line:[" + r + "]");
+//    console.log("Textile Line:[" + r + "]");
   }
   var htmlOutput=HtmlService.createHtmlOutput("<pre>" + szOutString + "</pre>").setTitle(szTitle);
   SpreadsheetApp.getUi().showSidebar(htmlOutput);
@@ -249,9 +249,9 @@ function Textile(bSmall)
       szOutString += curRet;
 	}
     szOutString += '|\r\n';
-    console.log("Textile Line:[" + i + "]");
+//    console.log("Textile Line:[" + i + "]");
   }
-  console.log("Textile :" + szOutString);
+//  console.log("Textile :" + szOutString);
   var htmlOutput=HtmlService.createHtmlOutput("<pre>" + szOutString + "</pre>").setTitle(szTitle);
   SpreadsheetApp.getUi().showSidebar(htmlOutput);
 }
@@ -263,10 +263,12 @@ function onInstall(e) {
 
 function onOpen(e) {
   SpreadsheetApp.getUi().createAddonMenu() // Or DocumentApp.
-      .addItem('Make textile', 'TextileNormal')
-      .addItem('Make textile(S)', 'TextileSmall')
-      .addItem('Make textile_NM', 'TextileNormalNoneMerged')
-      .addItem('Make textile(S)_NM', 'TextileSmallNoneMerged')
+      .addItem('Make textile', 'TextileNormalNoneMerged')
+      .addItem('Make textile(S)', 'TextileSmallNoneMerged')
+//      .addItem('Make textileOrg', 'TextileNormal')
+//      .addItem('Make textileOrg(S)', 'TextileSmall')
+//      .addItem('Make textile_NM', 'TextileNormalNoneMerged')
+//      .addItem('Make textile(S)_NM', 'TextileSmallNoneMerged')
       .addToUi();
 }
 
