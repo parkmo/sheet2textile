@@ -1,5 +1,3 @@
-var szOutString = "";
-
 function TextileNormal()
 {
   return Textile(0);
@@ -18,31 +16,6 @@ function TextileNormalNoneMerged()
 function TextileSmallNoneMerged()
 {
   return TextileProcByArr(1);
-}
-
-function getInMergeRangeByArr(activeRange, iPosX, iPosY)
-{
-  var szRetValue="";
-  mergedRanges=activeRange.getMergedRanges();
-
-  for (var i = 0; i < mergedRanges.length; i++) {
-//    console.log("MergeDebug:[" + i + "] iPosX [" + iPosX + "] iPosY [" + iPosY + "] RowIndex[" + mergedRanges[i].getRowIndex()
-//    + "] Row[" + mergedRanges[i].getRow() + "] Col[" + mergedRanges[i].getColumn() + "]");
-    curCell = activeRange.getCell(iPosX+1,iPosY+1);
-    szSplited=mergedRanges[i].getA1Notation().split(":");
-
-    if ( szSplited[0] == curCell.getA1Notation() ) { // Start Pos
-      if ( mergedRanges[i].getNumColumns() > 1) {
-        szRetValue += "\\" + mergedRanges[i].getNumColumns();
-      }
-      if ( mergedRanges[i].getNumRows() > 1 ) {
-        szRetValue += "/" + mergedRanges[i].getNumRows();
-      }
-    }
-//    Logger.log(mergedRanges[i].getDisplayValue());
-//    Logger.log("xxCols[" + mergedRanges[i].getNumColumns() + "] Rows[" + mergedRanges[i].getNumRows() + "]");
-  }
-  return szRetValue;
 }
 
 function ConvTextStyleByArr(szDisplayValue, szBgColor, szFontColor, szFontStyle, szFontWeight, szFontLine, szHorizontalAlignment, szVerticalAlignment)
@@ -89,7 +62,6 @@ function ConvTextStyleByArr(szDisplayValue, szBgColor, szFontColor, szFontStyle,
   } else if ( szHorizontalAlignment == "center" ) {
     szHorizonAlign = "=";
   }
-  //szHorizonAlign="";
   if ( szVerticalAlignment == "top" ) {
     szVerticalAlign = "^";
   }
@@ -108,6 +80,65 @@ function ConvTextStyleByArr(szDisplayValue, szBgColor, szFontColor, szFontStyle,
   return szOutString;
 }
 
+function createMergedInfo(curRange)
+{
+  var szRetValue="";
+  var ar_MergedInfo = curRange.getFormulas(); // make empty string array
+  var mergedRanges=curRange.getMergedRanges();
+  var iBaseRow = curRange.getRow();
+  var iBaseCol = curRange.getColumn();
+//  console.log("curRange[%d][%d]", curRange.getRow(), curRange.getColumn());
+  for (var i = 0; i < mergedRanges.length; i++) {
+    console.log("RangeNot[%s] Row[%d] NumRow[%d] Col[%d] NumCol[%d]"
+                , mergedRanges[i].getA1Notation()
+                , mergedRanges[i].getRow()
+                , mergedRanges[i].getNumRows()
+                , mergedRanges[i].getColumn()
+                , mergedRanges[i].getNumColumns()
+               );
+    var iCurRow = mergedRanges[i].getRow();
+    var iCurCol = mergedRanges[i].getColumn();
+    var iNumRows = mergedRanges[i].getNumRows();
+    var iNumCols = mergedRanges[i].getNumColumns();
+    iCurRow -= iBaseRow;
+    iCurCol -= iBaseCol;
+    ar_MergedInfo[iCurRow][iCurCol] = Utilities.formatString("%d:%d", iNumRows, iNumCols);
+    for (var iRow = 0 ; iRow < iNumRows ; iRow++ ) {
+      for (var iCol = 0 ; iCol < iNumCols; iCol++ ) {
+        if ( !(iRow == 0 && iCol == 0) ) {
+          ar_MergedInfo[iCurRow+iRow][iCurCol+iCol] = "1:1"; // Mark Merged
+        }
+      }
+    }
+  }
+  console.log("Log : ar_MergedInfo");
+  console.log(ar_MergedInfo);
+  return ar_MergedInfo;
+}
+
+function getInMergeRangeByArr(ar_MergedInfo, iPosX, iPosY)
+{
+  var szRetValue="";
+  szOrginValue = ar_MergedInfo[iPosX][iPosY];
+  szSplited = szOrginValue.split(":");
+  
+  if ( szOrginValue == "" ) { // Normal Block
+    return "N"; // Normal Block
+  }
+  else if ( szOrginValue == "1:1" ) { // Merged Block
+    return "M"; // Merged Block
+  }
+  else {
+    if ( +szSplited[0] > 1 ) {
+      szRetValue += "/" + szSplited[0];
+    }
+    if ( +szSplited[1] > 1 ) {
+      szRetValue += "\\" + szSplited[1];
+    }
+  }
+  return szRetValue;
+}
+
 function TextileProcByArr(bSmall)
 {
   var r1, r2, ro1, co1;
@@ -116,6 +147,7 @@ function TextileProcByArr(bSmall)
   var activeRange = selection.getActiveRange();
   var ui = SpreadsheetApp.getUi();
   var szTitle;
+  var szOutString = "";
   
   if ( bSmall ) {
     szOutString += "table{valign:top;font-size:small}." + "\r\n";
@@ -133,14 +165,22 @@ function TextileProcByArr(bSmall)
   var ar_szFontLines = activeRange.getFontLines();
   var ar_szHorizontalAlignment = activeRange.getHorizontalAlignments();
   var ar_szVerticalAlignment = activeRange.getVerticalAlignments();
+  var ar_megedInfo = createMergedInfo(activeRange);
+
   for (var r=0; r < ar_DisplayValues.length; r++) {
     for (var c=0; c < ar_DisplayValues[r].length; c++) {
-        curRet= getInMergeRangeByArr(activeRange,r,c);
+        szCurRet= getInMergeRangeByArr(ar_megedInfo,r,c);
+      if ( szCurRet != "M" ) { // N or 2:1 ...
         szOutString += "|";
-        szOutString += curRet;
-        szOutString += ConvTextStyleByArr(ar_DisplayValues[r][c], ar_szBackgrounds[r][c],
-                         ar_szFontColors[r][c],ar_szFontStyles[r][c],ar_szFontWeights[r][c]
-                                         , ar_szFontLines[r][c], ar_szHorizontalAlignment[r][c], ar_szVerticalAlignment[r][c]);
+        if ( szCurRet == "N" ) {
+          szCurRet = "";
+        }
+        szOutString += szCurRet;
+        szOutString += ConvTextStyleByArr(ar_DisplayValues[r][c], ar_szBackgrounds[r][c], ar_szFontColors[r][c]
+                                          , ar_szFontStyles[r][c],ar_szFontWeights[r][c]
+                                          , ar_szFontLines[r][c], ar_szHorizontalAlignment[r][c], ar_szVerticalAlignment[r][c]
+                                         );
+      }
     }
     szOutString += '|\r\n';
     console.log("Textile Line:[" + r + "]");
