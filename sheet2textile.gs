@@ -76,6 +76,7 @@ function ConvTextStyleByArr(szDisplayValue, szBgColor, szFontColor, szFontStyle,
     szSetFontColor = "";
   }
 
+  szDisplayValue =  szDisplayValue.replace(/\n\n/g, '\n&amp;nbsp;\n');  
   szOutString += szHorizonAlign + szVerticalAlign + szSetFontColor + ". " + szFontBold + szFontItalic + szFontLine + szDisplayValue + szFontLine + szFontItalic + szFontBold;
   return szOutString;
 }
