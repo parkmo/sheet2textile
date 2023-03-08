@@ -1,12 +1,4 @@
-function TextileNormal()
-{
-  return Textile(0);
-}
-
-function TextileSmall()
-{
-  return Textile(1);
-}
+var globalOptWithLink = false;
 
 function TextileNormalNoneMerged()
 {
@@ -15,6 +7,12 @@ function TextileNormalNoneMerged()
 
 function TextileSmallNoneMerged()
 {
+  return TextileProcByArr(1);
+}
+
+function TextileSmallNoneMergedWithLink()
+{
+  globalOptWithLink = true;
   return TextileProcByArr(1);
 }
 
@@ -122,7 +120,6 @@ function getInMergeRangeByArr(ar_MergedInfo, iPosX, iPosY)
   var szRetValue="";
   szOrginValue = ar_MergedInfo[iPosX][iPosY];
   szSplited = szOrginValue.split(":");
-  
   if ( szOrginValue == "" ) { // Normal Block
     return "N"; // Normal Block
   }
@@ -140,13 +137,25 @@ function getInMergeRangeByArr(ar_MergedInfo, iPosX, iPosY)
   return szRetValue;
 }
 
+function getCellValueWithLink(cellValue, cellRichValue)
+{
+  var curLinkURL = null;
+  if (globalOptWithLink) {
+    curLinkURL = cellRichValue.getLinkUrl();
+  }
+  var retValue = cellValue;
+  if ( curLinkURL ) {
+    retValue = `"${cellValue}":${curLinkURL}`
+  }
+  // Logger.log(`cellValue: , [${cellValue}]`);
+  // Logger.log(`curLinkURL: [${curLinkURL}]`);
+  return retValue;
+}
+
 function TextileProcByArr(bSmall)
 {
-  var r1, r2, ro1, co1;
-  var First, str1, strElm, strText;
   var selection = SpreadsheetApp.getActiveSpreadsheet().getSelection();
   var activeRange = selection.getActiveRange();
-  var ui = SpreadsheetApp.getUi();
   var szTitle;
   var szOutString = "";
   
@@ -157,12 +166,15 @@ function TextileProcByArr(bSmall)
   else {
     szTitle = "TextTile Table";
   }
+  // Logger.log("Start TextileProcByArr");
   
   var ar_szBackgrounds = activeRange.getBackgrounds();
   var ar_szFontColors = activeRange.getFontColors();
   var ar_szFontStyles = activeRange.getFontStyles();
   var ar_szFontWeights = activeRange.getFontWeights();
   var ar_DisplayValues = activeRange.getDisplayValues();
+  var ar_RichTextValues = activeRange.getRichTextValues();
+
   var ar_szFontLines = activeRange.getFontLines();
   var ar_szHorizontalAlignment = activeRange.getHorizontalAlignments();
   var ar_szVerticalAlignment = activeRange.getVerticalAlignments();
@@ -177,7 +189,7 @@ function TextileProcByArr(bSmall)
           szCurRet = "";
         }
         szOutString += szCurRet;
-        szOutString += ConvTextStyleByArr(ar_DisplayValues[r][c], ar_szBackgrounds[r][c], ar_szFontColors[r][c]
+        szOutString += ConvTextStyleByArr(getCellValueWithLink(ar_DisplayValues[r][c], ar_RichTextValues[r][c]), ar_szBackgrounds[r][c], ar_szFontColors[r][c]
                                           , ar_szFontStyles[r][c],ar_szFontWeights[r][c]
                                           , ar_szFontLines[r][c], ar_szHorizontalAlignment[r][c], ar_szVerticalAlignment[r][c]
                                          );
@@ -186,6 +198,65 @@ function TextileProcByArr(bSmall)
     szOutString += '|\r\n';
 //    console.log("Textile Line:[" + r + "]");
   }
+  var htmlOutput=HtmlService.createHtmlOutput("<pre>" + szOutString + "</pre>").setTitle(szTitle);
+  SpreadsheetApp.getUi().showSidebar(htmlOutput);
+}
+
+function onInstall(e) {
+  onOpen(e);
+  // Perform additional setup as needed.
+}
+
+function onOpen(e) {
+  SpreadsheetApp.getUi().createAddonMenu() // Or DocumentApp.
+      .addItem('Make textile', 'TextileNormalNoneMerged')
+      .addItem('Make textile(S)', 'TextileSmallNoneMerged')
+      .addItem('Make textile(S/Link)', 'TextileSmallNoneMergedWithLink')
+//      .addItem('Make textileOrg', 'TextileNormal')
+//      .addItem('Make textileOrg(S)', 'TextileSmall')
+      .addToUi();
+}
+
+/// No Use
+/*
+function TextileNormal()
+{
+  return Textile(0);
+}
+
+function TextileSmall()
+{
+  return Textile(1);
+}
+
+function Textile(bSmall)
+{
+  var ro1, co1;
+  var selection = SpreadsheetApp.getActiveSpreadsheet().getSelection();
+  var activeRange = selection.getActiveRange();
+  var szTitle;
+  
+  ro1 = activeRange.getNumRows();
+  co1 = activeRange.getNumColumns();
+  mergedRanges=activeRange.getMergedRanges();
+  if ( bSmall ) {
+    szOutString += "table{valign:top;font-size:small}." + "\r\n";
+    szTitle = "TextTile Table(S)";
+  }
+  else {
+    szTitle = "TextTile Table";
+  }
+  
+  for (var i=1; i <= ro1; i++) {
+	for (var j=1; j <= co1; j++ ) {      
+      curCell = activeRange.getCell(i, j);
+      curRet=getInMergeRange(mergedRanges, curCell);
+      szOutString += curRet;
+	}
+    szOutString += '|\r\n';
+//    console.log("Textile Line:[" + i + "]");
+  }
+//  console.log("Textile :" + szOutString);
   var htmlOutput=HtmlService.createHtmlOutput("<pre>" + szOutString + "</pre>").setTitle(szTitle);
   SpreadsheetApp.getUi().showSidebar(htmlOutput);
 }
@@ -220,57 +291,6 @@ function getInMergeRange(curMergedRanges, curCell)
   }
   szRetValue += ConvTextStyle(curCell);
   return szRetValue;
-}
-
-function Textile(bSmall)
-{
-  var r1, r2, ro1, co1;
-  var First, str1, strElm, strText;
-  var CB; // DataObject
-  var selection = SpreadsheetApp.getActiveSpreadsheet().getSelection();
-  var activeRange = selection.getActiveRange();
-  var ui = SpreadsheetApp.getUi();
-  var szTitle;
-  
-  ro1 = activeRange.getNumRows();
-  co1 = activeRange.getNumColumns();
-  mergedRanges=activeRange.getMergedRanges();
-  if ( bSmall ) {
-    szOutString += "table{valign:top;font-size:small}." + "\r\n";
-    szTitle = "TextTile Table(S)";
-  }
-  else {
-    szTitle = "TextTile Table";
-  }
-  
-  for (var i=1; i <= ro1; i++) {
-	for (var j=1; j <= co1; j++ ) {      
-      curCell = activeRange.getCell(i, j);
-      curRet=getInMergeRange(mergedRanges, curCell);
-      szOutString += curRet;
-	}
-    szOutString += '|\r\n';
-//    console.log("Textile Line:[" + i + "]");
-  }
-//  console.log("Textile :" + szOutString);
-  var htmlOutput=HtmlService.createHtmlOutput("<pre>" + szOutString + "</pre>").setTitle(szTitle);
-  SpreadsheetApp.getUi().showSidebar(htmlOutput);
-}
-
-function onInstall(e) {
-  onOpen(e);
-  // Perform additional setup as needed.
-}
-
-function onOpen(e) {
-  SpreadsheetApp.getUi().createAddonMenu() // Or DocumentApp.
-      .addItem('Make textile', 'TextileNormalNoneMerged')
-      .addItem('Make textile(S)', 'TextileSmallNoneMerged')
-//      .addItem('Make textileOrg', 'TextileNormal')
-//      .addItem('Make textileOrg(S)', 'TextileSmall')
-//      .addItem('Make textile_NM', 'TextileNormalNoneMerged')
-//      .addItem('Make textile(S)_NM', 'TextileSmallNoneMerged')
-      .addToUi();
 }
 
 function ConvTextStyle(curCell)
@@ -339,3 +359,4 @@ function ConvTextStyle(curCell)
   szOutString += szHorizonAlign + szVerticalAlign + szSetFontColor + ". " + szFontBold + szFontItalic + szFontLine + curCell.getDisplayValue() + szFontLine + szFontItalic + szFontBold;
   return szOutString;
 }
+*/
